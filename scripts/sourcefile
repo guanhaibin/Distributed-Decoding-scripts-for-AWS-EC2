@@ -1,0 +1,2 @@
+export PATH=~/mpich-install/bin:$PATH
+export LD_LIBRARY_PATH=~/mpich-install/lib
