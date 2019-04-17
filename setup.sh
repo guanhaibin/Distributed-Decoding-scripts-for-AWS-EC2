@@ -21,7 +21,7 @@ rm instance_info/*
 
 echo "===================================================="
 echo "Creating $NUM_NODES AWS EC2 instances for our cluster"
-
+echo "===================================================="
 aws ec2 run-instances --image-id ami-0f65671a86f061fcd --security-group-ids sg-0fe3b8b441cf5254d \
 --count $NUM_NODES --instance-type m4.large --key-name iot-cluster --subnet-id subnet-bfc8fbd7 \
 --associate-public-ip-address --query 'Instances[*].InstanceId' \
@@ -39,6 +39,7 @@ done
 
 echo "===================================================="
 echo "Make sure the status of all of the instances are RUNNING"
+echo "===================================================="
 running_nodes=0
 while [[ $running_nodes != $NUM_NODES ]]; do
 
@@ -66,6 +67,7 @@ if [[ ${#status_instances[@]} = 0 ]]; then
   echo "===================================================="
   echo "Getting the Public and Private IPs"
   echo "Saved IPs on instance_info/public_ip_list.json and instance_info/ip_private_list.json"
+  echo "===================================================="
   aws ec2 describe-instances --instance-ids $id_inst_params \
   --query 'Reservations[0].Instances[*].PublicIpAddress' \
   >> instance_info/public_ip_list.json
@@ -84,6 +86,7 @@ if [[ ${#status_instances[@]} = 0 ]]; then
   MASTER_PRIVATE_IP=${ip_private_list[0]}
   echo "===================================================="
   echo "Checking SSH connections on instances"
+  echo "===================================================="
   for pub_ip in "${public_ip_list[@]}"
   do
   ssh -oStrictHostKeyChecking=no -oConnectionAttempts=$SSH_ATTEMPTS -i $LOCAL_PEM $USER_ACCESS@$pub_ip "exit;"
@@ -94,6 +97,7 @@ if [[ ${#status_instances[@]} = 0 ]]; then
 
   echo "===================================================="
   echo "Configure the MASTER::$MASTER NODE"
+  echo "===================================================="
   scp -i $LOCAL_PEM $SCRIPT_FOLDER $USER_ACCESS@$MASTER:~/
 
   echo "Send the AMAZON PEM to the MASTER::$MASTER node "
@@ -109,13 +113,12 @@ if [[ ${#status_instances[@]} = 0 ]]; then
   pip3 install mpi4py numpy;\
   source sourcefile;"
   ssh -oStrictHostKeyChecking=no -i $LOCAL_PEM $USER_ACCESS@$MASTER "$master_conf"
-  echo "DONE"
-
   echo "DONE WITH Configuring the MASTER::$MASTER "
   echo "===================================================="
 
   echo "===================================================="
   echo "Configurethe SLAVES NODES                           "
+  echo "===================================================="
   for (( i=1; i<$NUM_NODES; i++ ))
   do
   curr_slave_public_ip=${public_ip_list[$i]}
@@ -139,6 +142,7 @@ if [[ ${#status_instances[@]} = 0 ]]; then
 
   echo "===================================================="
   echo "Create hostsfile ..."
+  echo "===================================================="
   rm hostsfile
   for private_ip in "${ip_private_list[@]}"
   do
@@ -149,6 +153,7 @@ if [[ ${#status_instances[@]} = 0 ]]; then
 
   echo "===================================================="
   echo "Send the hostsfile and add the private IPs in /etc/hosts for all nodes"
+  echo "===================================================="
   set_hosts="printf \"\n#AWS Build Cluster Script -- ip private nodes\n\" | sudo tee -a /etc/hosts; "
   set_hosts=$set_hosts"printf \"${ip_private_list[0]}   MASTER\n\" | sudo tee -a /etc/hosts; "
   for (( i=1; i<$NUM_NODES; i++ ))
@@ -165,6 +170,7 @@ if [[ ${#status_instances[@]} = 0 ]]; then
   echo "===================================================="
   echo "Generate the key file and send the id_rsa.pub to the rest of nodes "
   echo "cat id_rsa.pub >> ~/.ssh/authorized_keys "
+  echo "===================================================="
   for (( i=0; i<$NUM_NODES; i++ ))
   do
   curr_send_public_ip=${public_ip_list[$i]}
@@ -194,6 +200,7 @@ if [[ ${#status_instances[@]} = 0 ]]; then
 
   echo "===================================================="
   echo "Trying to ssh connect without keys                  "
+  echo "===================================================="
   for (( i=0; i<$NUM_NODES; i++ ))
     do
   curr_send_public_ip=${public_ip_list[$i]}
@@ -212,6 +219,7 @@ if [[ ${#status_instances[@]} = 0 ]]; then
 
   echo "===================================================="
   echo "Congradulations!!! The AWS Cluster for MPI is READY!"
+  echo "===================================================="
   echo "On each instance there is a user with :"
   echo "USERNAME:$USER - PASSWORD:$PASS"
   echo -e "MASTER \tPRIVATE_IP=$MASTER_PRIVATE_IP \tPUBLIC_IP=$MASTER"
